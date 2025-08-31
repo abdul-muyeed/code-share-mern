@@ -221,7 +221,7 @@ export const Home = () => {
             </div>
           )}
         </section>
-        <Link to={`/view/asdf`}>View</Link>
+        {/* <Link to={`/view/asdf`}>View</Link> */}
       </main>
     </div>
   );
