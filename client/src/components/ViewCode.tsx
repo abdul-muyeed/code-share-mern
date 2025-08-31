@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
@@ -5,12 +6,12 @@ import { useParams } from "react-router-dom";
 export const ViewCode = () => {
     const { tag } = useParams<{ tag: string }>();
   const [content, setContent] = useState<string>(""); // default empty content
-  const [language, setLanguage] = useState<string | undefined>(undefined);
+  const [language, ] = useState<string | undefined>(undefined);
   const [showLineNumbers, setShowLineNumbers] = useState<boolean>(false);
   const [isWrapped, setIsWrapped] = useState<boolean>(false);
-  const [filename, setFilename] = useState<string>("shared.txt");
+  const [filename, ] = useState<string>("shared.txt");
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const [, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [copied, setCopied] = useState<boolean>(false);

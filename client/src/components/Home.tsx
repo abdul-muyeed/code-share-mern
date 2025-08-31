@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 export const Home = () => {
   const [text, setText] = useState<string>("");
-  const [shared, setShared] = useState<string[]>([]);
+  const [, setShared] = useState<string[]>([]);
   const [url, setUrl] = useState<string>(window.location.href); // destination URL initialized from current location (fallback to localhost)
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<string>("");
