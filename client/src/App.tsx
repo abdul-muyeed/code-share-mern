@@ -9,7 +9,7 @@ const router = createBrowserRouter([
     element: <Home />,
   },
   {
-    path: "/d/:tag",
+    path: "/:tag",
     element: <ViewCode />,
   }
 ]);
