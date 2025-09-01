@@ -6,7 +6,10 @@ import CryptoJS from "crypto-js";
 import morgan from "morgan";
 import cors from "cors";
 
+
+
 dotenv.config();
+await connectDB();
 const PORT = process.env.PORT || 5000;
 const app = express();
 app.use(cors(
@@ -79,6 +82,6 @@ app.get("/api/text-share", async (req, res) => {
 
 
 app.listen(PORT, async () => {
-  await connectDB();
+  
   console.error("Server is running on http://localhost:"+PORT);
 });
