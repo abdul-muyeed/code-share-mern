@@ -34,8 +34,8 @@ app.post("/api/text-share", async (req, res) => {
         return res.status(400).json({ message: "URL and text are required" });
     }
     let short_url;
-    if(url.substring(0, 22) === "http://localhost:5173/") {
-        short_url = url.replace("http://localhost:5173/", "");
+    if(url.substring(0, 40) === "https://code-share-mern-kcnm.vercel.app/") {
+        short_url = url.replace("https://code-share-mern-kcnm.vercel.app/", "");
     }
     if(!short_url){
         return res.status(400).json({ message: "Invalid URL" });
