@@ -25,7 +25,7 @@ export const ViewCode = () => {
     try {
       // ask server for text; if it returns JSON we'll stringify it
       const res = await axios.get(
-        "http://localhost:3000/api/text-share?url="+tag
+        "https://code-share-mern-kcnm.vercel.app/api/text-share?url="+tag
       );
 
       const data = res?.data?.data ?? "";

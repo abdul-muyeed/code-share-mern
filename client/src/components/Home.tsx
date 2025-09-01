@@ -14,7 +14,7 @@ export const Home = () => {
     setStatus("");
     try {
       await axios.post(
-        "http://localhost:3000/api/text-share",
+        "https://code-share-mern-kcnm.vercel.app/api/text-share",
         { text: text,url: url, isEncrypted: false },
         { headers: { "Content-Type": "application/json" } }
       );
