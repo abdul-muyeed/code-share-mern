@@ -1,4 +1,3 @@
-// ...existing code...
 import mongoose from "mongoose";
 
 let mongodb_instance = null;

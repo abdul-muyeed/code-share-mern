@@ -1,33 +1,84 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import axios from "axios";
 
 export const Home = () => {
   const [text, setText] = useState<string>("");
   const [, setShared] = useState<string[]>([]);
-  const [url, setUrl] = useState<string>(window.location.href); // destination URL initialized from current location (fallback to localhost)
+  const [url, setUrl] = useState<string>(window.location.href);
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<string>("");
+  const [mode, setMode] = useState<"text" | "file">("text");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string>("");
+
+  const uploadFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await axios.post(
+        "https://code-share-mern-kcnm.vercel.app/api/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      // const res = await axios.post(
+      //   "http://localhost:3000/api/upload",
+      //   formData,
+      //   { headers: { "Content-Type": "multipart/form-data" } }
+      // );
+      return res.data.url ;
+    } catch (err) {
+      setStatus("Failed to upload file. See console for details.");
+      // eslint-disable-next-line no-console
+      console.error("File upload error:", err);
+      return "";
+    }
+  };
 
   const share = async () => {
     setLoading(true);
     setStatus("");
     try {
+      let payload: any = { isEncrypted: false };
+      payload.url = url;
+      if (mode === "text") {
+        payload.text = text;
+      } else if (mode === "file" && file) {
+        // Upload file and get URL
+        const uploadedUrl = await uploadFile(file);
+        console.log("uploadedUrl", uploadedUrl);
+        if (!uploadedUrl) {
+          setLoading(false);
+          return;
+        }
+        payload.content_url = uploadedUrl;
+        setFileUrl(uploadedUrl);
+      }
+
       await axios.post(
         "https://code-share-mern-kcnm.vercel.app/api/text-share",
-        { text: text,url: url, isEncrypted: false },
+        payload,
         { headers: { "Content-Type": "application/json" } }
       );
-      setShared((prev) => [text, ...prev]);
+      // console.log("payload", payload);
+      // await axios.post(
+      //   "http://localhost:3000/api/text-share",
+      //   payload,
+      //   { headers: { "Content-Type": "application/json" } }
+      // );
+      setShared((prev) =>
+        mode === "text" ? [text, ...prev] : [file?.name || "", ...prev]
+      );
       setText("");
+      setFile(null);
       setStatus("Shared successfully.");
     } catch (err) {
       setStatus("Failed to share. See console for details.");
-      // helpful for debugging
       // eslint-disable-next-line no-console
       console.error("Share error:", err);
     } finally {
       setLoading(false);
-      // clear status after a short delay
       setTimeout(() => setStatus(""), 3000);
     }
   };
@@ -156,12 +207,40 @@ export const Home = () => {
       <main style={styles.main}>
         <section style={styles.left}>
           <label
-            htmlFor="share-text"
+            htmlFor="share-mode"
             style={{ marginBottom: 8, fontWeight: 600 }}
           >
-            Share some text
+            Choose what to share
           </label>
-          {/* URL input for destination where the text will be shown */}
+          <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+            <label>
+              <input
+                type="radio"
+                name="share-mode"
+                value="text"
+                checked={mode === "text"}
+                onChange={() => {
+                  setMode("text");
+                  setFile(null);
+                  setFileUrl("");
+                }}
+              />{" "}
+              Text
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="share-mode"
+                value="file"
+                checked={mode === "file"}
+                onChange={() => {
+                  setMode("file");
+                  setText("");
+                }}
+              />{" "}
+              File
+            </label>
+          </div>
           <input
             id="share-url"
             aria-label="Destination URL"
@@ -170,24 +249,68 @@ export const Home = () => {
             onChange={(e) => setUrl(e.target.value)}
             style={styles.urlInput}
           />
-          <textarea
-            id="share-text"
-            placeholder="Paste or type text here..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            style={styles.textarea}
-          />
+          {mode === "file" ? (
+            <>
+              <label
+                htmlFor="file-upload"
+                style={{
+                  marginBottom: 8,
+                  fontWeight: 500,
+                  fontSize: 13,
+                  color: "#64748b",
+                  display: "block",
+                }}
+              >
+                Upload a file
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                style={{ marginBottom: 12 }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setFile(f || null);
+                  setFileUrl("");
+                }}
+              />
+              {file && (
+                <div style={{ fontSize: 13, marginBottom: 8 }}>
+                  Selected: {file.name}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <label
+                htmlFor="share-text"
+                style={{ marginBottom: 8, fontWeight: 600 }}
+              >
+                Share some text
+              </label>
+              <textarea
+                id="share-text"
+                placeholder="Paste or type text here..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                style={styles.textarea}
+              />
+            </>
+          )}
           <div style={styles.controls}>
             <button
               style={styles.button}
               onClick={share}
-              aria-label="Share text"
-              disabled={loading}
+              aria-label="Share"
+              disabled={loading || (mode === "text" ? !text : !file)}
             >
               {loading ? "Sharing..." : "Share"}
             </button>
             <button
-              onClick={() => setText("")}
+              onClick={() => {
+                setText("");
+                setFile(null);
+                setFileUrl("");
+              }}
               style={{
                 padding: "8px 12px",
                 borderRadius: 8,
@@ -205,7 +328,7 @@ export const Home = () => {
                 fontSize: 13,
               }}
             >
-              {text.length} chars
+              {mode === "text" ? `${text.length} chars` : file ? file.name : ""}
             </span>
           </div>
           {status && (
@@ -217,6 +340,11 @@ export const Home = () => {
               }}
             >
               {status}
+            </div>
+          )}
+          {fileUrl && (
+            <div style={{ marginTop: 8, fontSize: 13, color: "#0ea5e9" }}>
+              Uploaded file URL: <a href={fileUrl}>{fileUrl}</a>
             </div>
           )}
         </section>

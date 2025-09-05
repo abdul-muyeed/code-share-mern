@@ -5,6 +5,9 @@ const textSchema = new mongoose.Schema(
     text: {
       type: String,
     },
+    content_url: {
+      type: String
+    },
     url: {
       type: String,
     },

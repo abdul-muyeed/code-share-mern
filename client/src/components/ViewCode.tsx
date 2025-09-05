@@ -4,19 +4,22 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 
 export const ViewCode = () => {
-    const { tag } = useParams<{ tag: string }>();
+  const { tag } = useParams<{ tag: string }>();
   const [content, setContent] = useState<string>(""); // default empty content
-  const [language, ] = useState<string | undefined>(undefined);
+  const [isFileUrl, setIsFileUrl] = useState<boolean>(false);
   const [showLineNumbers, setShowLineNumbers] = useState<boolean>(false);
   const [isWrapped, setIsWrapped] = useState<boolean>(false);
-  const [filename, ] = useState<string>("shared.txt");
+  const [filename] = useState<string>("shared.txt");
 
   const [, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [copied, setCopied] = useState<boolean>(false);
 
-  const lines = useMemo(() => content.split(/\r\n|\r|\n/), [content]);
+  const lines = useMemo(
+    () => (isFileUrl ? [] : content.split(/\r\n|\r|\n/)),
+    [content, isFileUrl]
+  );
 
   // new: fetch text via axios
   const fetchFromUrl = async () => {
@@ -27,16 +30,39 @@ export const ViewCode = () => {
       const res = await axios.get(
         "https://code-share-mern-kcnm.vercel.app/api/text-share?url="+tag
       );
+      // const res = await axios.get(
+      //   "http://localhost:3000/api/text-share?url=" + tag,
+      //   { responseType: "json" } // get JSON so we can distinguish fields
+      // );
 
-      const data = res?.data?.data ?? "";
-
-      // res.data will be a string when responseType:'text' is used.
-      // If server returns JSON-like string, leave as-is; if it's an object (unlikely with responseType:'text'),
-      // fallback to stringify the object.
-      const text =
-        typeof data === "string" ? data : JSON.stringify(data, null, 2);
-
-      setContent(text);
+      // Accept both {text} and {content_url}
+      const data = res?.data ?? {};
+      console.log(data);
+      if (
+        typeof data.content_url === "string" &&
+        /^https?:\/\//.test(data.content_url)
+      ) {
+        setIsFileUrl(true);
+        setContent(data.content_url);
+      } else if (typeof data.text === "string") {
+        setIsFileUrl(false);
+        setContent(data.text);
+      } else if (
+        typeof data.data === "string" &&
+        /^https?:\/\//.test(data.data)
+      ) {
+        // fallback for previous API
+        setIsFileUrl(true);
+        setContent(data.data);
+      } else {
+        setIsFileUrl(false);
+        setContent(
+          typeof data.data === "string"
+            ? data.data
+            : JSON.stringify(data, null, 2)
+        );
+      }
+      // console.log(isFileUrl, content);
     } catch (err: any) {
       // Prefer server-provided message if available, else err.message
       const serverData = err?.response?.data;
@@ -153,12 +179,15 @@ export const ViewCode = () => {
           borderBottom: "1px solid #eee",
         }}
       >
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {language ? (
-            <strong style={{ fontSize: 12 }}>{language}</strong>
-          ) : (
-            <span style={{ fontSize: 12, color: "#666" }}>Content</span>
-          )}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
+          {/* Remove language check, just show "Content" */}
+          <span style={{ fontSize: 12, color: "#666" }}>Content</span>
           <button
             style={{
               background: "#fff",
@@ -231,59 +260,148 @@ export const ViewCode = () => {
         </div>
       )}
 
-      <div
-        style={{
-          // changed: allow this area to grow and handle overflow internally
-          display: "flex",
-          alignItems: "stretch",
-          flex: 1,
-          overflow: "hidden",
-          background: "#fff",
-        }}
-      >
-        {showLineNumbers && (
-          <div
-            // added: ref and onScroll to sync with the code pane
-            ref={lineNumsRef}
-            onScroll={handleLinesScroll}
-            className="line-nums" // added: class to target scrollbar CSS
-            style={{
-              padding: "10px 8px",
-              background: "#fafafa",
-              borderRight: "1px solid #eee",
-              color: "#888",
-              textAlign: "right",
-              userSelect: "none",
-              minWidth: 44,
-              overflowY: "auto", // allow the numbers column to scroll
-            }}
-          >
-            {lines.map((_, idx) => (
-              <div key={idx} style={{ lineHeight: 1.6 }}>
-                {idx + 1}
-              </div>
-            ))}
-          </div>
-        )}
-        <pre
-          // added: ref and onScroll so we can sync scrolling with the numbers
-          ref={preRef as any}
-          onScroll={handlePreScroll}
+      {/* Only show file UI if isFileUrl, otherwise show text/code UI */}
+      {isFileUrl ? (
+        <div
           style={{
-            padding: 10,
-            whiteSpace: isWrapped ? "pre-wrap" : "pre",
-            minWidth: 200,
-            overflow: "auto", // allow inner scrolling
-            color: "#222",
-
-            // fill remaining vertical space so scrolling happens inside this element
+            margin: "auto",
+            textAlign: "center",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
             flex: 1,
-            margin: 0,
           }}
         >
-          <code>{content}</code>
-        </pre>
-      </div>
+          <p style={{ fontSize: 16, marginBottom: 16 }}>
+            This share contains a file or content.
+          </p>
+          <div
+            style={{
+              marginBottom: 16,
+              wordBreak: "break-all",
+              color: "#0369a1",
+              fontSize: 14,
+            }}
+          >
+            <span>File URL: </span>
+            <a
+              href={content}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#0369a1" }}
+            >
+              {content}
+            </a>
+          </div>
+          <button
+            style={{
+              display: "inline-block",
+              padding: "10px 20px",
+              background: "#0ea5e9",
+              color: "#fff",
+              borderRadius: 8,
+              fontWeight: 600,
+              textDecoration: "none",
+              marginRight: 12,
+              border: "none",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              // Download file using anchor click
+              const link = document.createElement("a");
+              link.href = content;
+              link.download = ""; // Let browser use filename from URL or headers
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
+            Download File
+          </button>
+          <div
+            style={{
+              marginTop: 24,
+              width: 300,
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <div
+              style={{
+                background: "#e5e7eb",
+                borderRadius: 8,
+                height: 8,
+                width: "100%",
+                marginBottom: 4,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: "#0ea5e9",
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: "#666" }}>Ready to download</div>
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "stretch",
+            flex: 1,
+            overflow: "hidden",
+            background: "#fff",
+          }}
+        >
+          {/* Only show text/code UI for text */}
+          <div style={{ flex: 1, display: "flex" }}>
+            {showLineNumbers && (
+              <div
+                ref={lineNumsRef}
+                onScroll={handleLinesScroll}
+                className="line-nums"
+                style={{
+                  padding: "10px 8px",
+                  background: "#fafafa",
+                  borderRight: "1px solid #eee",
+                  color: "#888",
+                  textAlign: "right",
+                  userSelect: "none",
+                  minWidth: 44,
+                  overflowY: "auto",
+                }}
+              >
+                {lines.map((_, idx) => (
+                  <div key={idx} style={{ lineHeight: 1.6 }}>
+                    {idx + 1}
+                  </div>
+                ))}
+              </div>
+            )}
+            <pre
+              ref={preRef as any}
+              onScroll={handlePreScroll}
+              style={{
+                padding: 10,
+                whiteSpace: isWrapped ? "pre-wrap" : "pre",
+                minWidth: 200,
+                overflow: "auto",
+                color: "#222",
+                flex: 1,
+                margin: 0,
+              }}
+            >
+              <code>{content}</code>
+            </pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
