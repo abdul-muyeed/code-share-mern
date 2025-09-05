@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
-import { connectDB} from "./configs/connectDB.js";
+import { connectDB } from "./configs/connectDB.js";
 import Text from "./models/text.model.js";
 import CryptoJS from "crypto-js";
 import morgan from "morgan";
@@ -11,12 +11,18 @@ import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import File from "./models/files.model.js";
 
-
 await connectDB();
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in your environment variables."
+  );
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const PORT = process.env.PORT || 5000;
 const app = express();
 app.use(
@@ -38,7 +44,7 @@ const upload = multer({
 
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
-    console.log(req.file)
+    console.log(req.file);
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
@@ -46,7 +52,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "File size exceeds 10MB limit" });
     }
     // Upload directly from buffer to Supabase
-    const filename = `${Date.now()}-${uuidv4()}.${req.file.originalname.split('.').pop()}`;
+    const filename = `${Date.now()}-${uuidv4()}.${req.file.originalname
+      .split(".")
+      .pop()}`;
     const { data, error } = await supabase.storage
       .from("files")
       .upload(filename, req.file.buffer, {
@@ -73,28 +81,31 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
 app.post("/api/text-share", async (req, res) => {
   const { url, text, isEncrypted, content_url } = req.body;
-  console.log(req.body)
-  if(content_url && url){
+  console.log(req.body);
+  if (content_url && url) {
     let short_url;
-  if (url.substring(0, 35) === "https://code-share-mern.vercel.app/") {
-    short_url = url.replace("https://code-share-mern.vercel.app/", "");
-  }
+    if (url.substring(0, 35) === "https://code-share-mern.vercel.app/") {
+      short_url = url.replace("https://code-share-mern.vercel.app/", "");
+    }
 
-  // if (url.substring(0, 22) === "http://localhost:5173/") {
-  //   short_url = url.replace("http://localhost:5173/", "");
-  // }
-  if (!short_url) {
-    return res.status(400).json({ message: "Invalid URL" });
-  }
-  const newText = await Text.create({ url: short_url, content_url, isEncrypted });
-  return res.status(201).json({ message: "Content URL shared successfully" });
+    // if (url.substring(0, 22) === "http://localhost:5173/") {
+    //   short_url = url.replace("http://localhost:5173/", "");
+    // }
+    if (!short_url) {
+      return res.status(400).json({ message: "Invalid URL" });
+    }
+    const newText = await Text.create({
+      url: short_url,
+      content_url,
+      isEncrypted,
+    });
+    return res.status(201).json({ message: "Content URL shared successfully" });
   }
   if (!url || !text) {
     return res.status(400).json({ message: "URL and text are required" });
@@ -141,12 +152,10 @@ app.get("/api/text-share", async (req, res) => {
       // res.status(200).json({ message: "Text retrieved successfully", data: originalText });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Text retrieved successfully",
-        data: data.text || data.content_url,
-      });
+    res.status(200).json({
+      message: "Text retrieved successfully",
+      data: data.text || data.content_url,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving texts", error });
   }
