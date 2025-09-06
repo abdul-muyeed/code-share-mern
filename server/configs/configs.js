@@ -8,7 +8,8 @@ if (process.env.NODE_ENV === "prod") {
         PORT: process.env.PORT,
         SUPABASE_URL: process.env.SUPABASE_URL,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-        NODE_ENV: process.env.NODE_ENV
+        NODE_ENV: process.env.NODE_ENV,
+        SERVER_URL: "https://code-share-mern.vercel.app:" + process.env.PORT
     }
 } else {
     configs = {
@@ -17,7 +18,8 @@ if (process.env.NODE_ENV === "prod") {
         PORT: process.env.PORT,
         SUPABASE_URL: process.env.SUPABASE_URL,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-        NODE_ENV: process.env.NODE_ENV
+        NODE_ENV: process.env.NODE_ENV,
+        SERVER_URL: "http://localhost:" + process.env.PORT
     }
 }
 // check if any value is undefined

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { text } from "express";
 
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
@@ -8,8 +8,11 @@ import CryptoJS from "crypto-js";
 import morgan from "morgan";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
-import File from "./models/files.model.js";
+import File from "./models/file.model.js";
 import { configs } from "./configs/configs.js";
+import { TextRoute } from "./routes/text.route.js";
+import { UploadRoute } from "./routes/upload.route.js";
+const startTime = Date.now();
 
 await connectDB();
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -27,7 +30,7 @@ const PORT = process.env.PORT || 5000;
 const app = express();
 app.use(
   cors({
-    origin: [configs.CLIENT_URL],
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -41,6 +44,8 @@ app.use(express.urlencoded({ extended: true }));
 const upload = multer({
   storage: multer.memoryStorage(),
 });
+// app.use("/api/text-share", TextRoute);
+// app.use("/api/upload", UploadRoute);
 
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
@@ -81,15 +86,13 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
 
 app.post("/api/text-share", async (req, res) => {
   const { url, text, isEncrypted, content_url } = req.body;
   console.log(req.body);
   if (content_url && url) {
     let short_url;
+
     if (url.substring(0, configs.CLIENT_URL.length) === configs.CLIENT_URL) {
       short_url = url.replace(configs.CLIENT_URL, "");
     }
@@ -109,6 +112,7 @@ app.post("/api/text-share", async (req, res) => {
     return res.status(400).json({ message: "URL and text are required" });
   }
   let short_url;
+  console.log(url, configs.CLIENT_URL, url.substring(0, configs.CLIENT_URL.length));
   if (url.substring(0, configs.CLIENT_URL.length) === configs.CLIENT_URL) {
     short_url = url.replace(configs.CLIENT_URL, "");
   }
@@ -158,5 +162,6 @@ app.get("/api/text-share", async (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  console.error("Server is running on " + configs.PORT + " in " + configs.NODE_ENV + " mode" + "\n client:" + configs.CLIENT_URL);
+  console.info("Server is running on " + configs.PORT + " in " + configs.NODE_ENV + " mode" + "\nSERVER: " + configs.SERVER_URL);
+  console.info(`Startup time: ${Date.now() - startTime}ms`);
 });

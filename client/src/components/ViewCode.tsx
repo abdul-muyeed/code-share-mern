@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { Constains } from "../utils/constain";
 
 export const ViewCode = () => {
   const { tag } = useParams<{ tag: string }>();
@@ -28,14 +29,10 @@ export const ViewCode = () => {
     try {
       // ask server for text; if it returns JSON we'll stringify it
       const res = await axios.get(
-        "https://code-share-mern-kcnm.vercel.app/api/text-share?url="+tag
+        Constains.VITE_API_BASE_URL +
+        "/text-share?url=" + tag
       );
-      // const res = await axios.get(
-      //   "http://localhost:3000/api/text-share?url=" + tag,
-      //   { responseType: "json" } // get JSON so we can distinguish fields
-      // );
 
-      // Accept both {text} and {content_url}
       const data = res?.data ?? {};
       console.log(data);
       if (

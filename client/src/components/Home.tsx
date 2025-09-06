@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import axios from "axios";
+import { Constains } from "../utils/constain";
 
 export const Home = () => {
   const [text, setText] = useState<string>("");
@@ -17,16 +18,11 @@ export const Home = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await axios.post(
-        "https://code-share-mern-kcnm.vercel.app/api/upload",
+      const res = await axios.post( Constains.VITE_API_BASE_URL
+        +"/upload",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
-      // const res = await axios.post(
-      //   "http://localhost:3000/api/upload",
-      //   formData,
-      //   { headers: { "Content-Type": "multipart/form-data" } }
-      // );
       return res.data.url ;
     } catch (err) {
       setStatus("Failed to upload file. See console for details.");
@@ -56,17 +52,11 @@ export const Home = () => {
         setFileUrl(uploadedUrl);
       }
 
-      await axios.post(
-        "https://code-share-mern-kcnm.vercel.app/api/text-share",
+      await axios.post( Constains.VITE_API_BASE_URL +
+        "/text-share",
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
-      // console.log("payload", payload);
-      // await axios.post(
-      //   "http://localhost:3000/api/text-share",
-      //   payload,
-      //   { headers: { "Content-Type": "application/json" } }
-      // );
       setShared((prev) =>
         mode === "text" ? [text, ...prev] : [file?.name || "", ...prev]
       );
